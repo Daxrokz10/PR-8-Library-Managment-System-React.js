@@ -8,9 +8,8 @@ function UserFooter() {
           {/* Left Section */}
           <div className="footer-left">
             <div className="brand-container">
-              <div className="brand-icon">📚</div>
               <div className="brand-content">
-                <h4 className="brand-title">Digital Library Hub</h4>
+                <h4 className="brand-title">React Library </h4>
                 <p className="brand-description">
                   Manage books, members, and records efficiently with our modern
                   platform.

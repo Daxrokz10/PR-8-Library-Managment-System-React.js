@@ -23,7 +23,6 @@ import Signup from "./components/userside/Signup";
 import UserHeader from "./components/userside/UserHeader";
 import UserFooter from "./components/userside/UserFooter";
 import AboutUs from "./components/userside/pages/AboutUs";
-import ContactUs from "./components/userside/pages/ContactUs";
 import MyBooks from "./components/userside/pages/MyBooks";
 import MyProfile from "./components/userside/pages/MyProfile";
 
@@ -103,10 +102,6 @@ function App() {
         <Route
           path="/aboutus"
           element={<AboutUs handleUserLogout={handleUserLogout} />}
-        />
-        <Route
-          path="/contactus"
-          element={<ContactUs handleUserLogout={handleUserLogout} />}
         />
 
         <Route
