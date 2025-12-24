@@ -141,11 +141,7 @@ function ViewBooks({ list, handleDelete, handleEdit }) {
    Sidebar-aware layout
 ===================== */
 
-.viewbooks-wrapper {
-  margin-left: 240px; /* sidebar width */
-  padding: 20px 24px;
-  animation: fadeIn 0.4s ease-in-out;
-}
+
 
 @keyframes fadeIn {
   from {
