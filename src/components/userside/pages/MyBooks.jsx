@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import UserHeader from "../UserHeader";
 import UserFooter from "../UserFooter";
@@ -9,77 +10,72 @@ function MyBooks({ handleUserLogout }) {
   const [groupedBooks, setGroupedBooks] = useState([]);
 
   useEffect(() => {
-    const isAuth = localStorage.getItem("isAuth") === "true";
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-
+    const isAuth = sessionStorage.getItem("isAuth") === "true";
+    const user = JSON.parse(sessionStorage.getItem("currentUser"));
     if (!isAuth || !user) {
       navigate("/login", { replace: true });
       return;
     }
+    // Fetch user from API for latest myBooks
+    axios.get(`http://localhost:3000/users/${user.id}`).then((res) => {
+      const books = Array.isArray(res.data.myBooks) ? res.data.myBooks : [];
+      const grouped = Object.values(
+        books.reduce((acc, book) => {
+          acc[book.id] = acc[book.id]
+            ? { ...acc[book.id], qty: acc[book.id].qty + 1 }
+            : { ...book, qty: 1 };
+          return acc;
+        }, {})
+      );
+      setGroupedBooks(grouped);
+    });
+  }, []);
 
-    const books = Array.isArray(user.myBooks) ? user.myBooks : [];
+  const updateUserBooks = async (updatedMyBooks) => {
+    const user = JSON.parse(sessionStorage.getItem("currentUser"));
+    const updatedUser = { ...user, myBooks: updatedMyBooks };
+    await axios.patch(`http://localhost:3000/users/${user.id}`, {
+      myBooks: updatedMyBooks,
+    });
+    sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
+  };
+
+  const restoreBookCount = async (bookId) => {
+    // Get book, increment count, update via API
+    const res = await axios.get(`http://localhost:3000/books/${bookId}`);
+    await axios.patch(`http://localhost:3000/books/${bookId}`, {
+      count: (res.data.count || 0) + 1,
+    });
+  };
+
+  const handleRemoveOne = async (bookId) => {
+    const user = JSON.parse(sessionStorage.getItem("currentUser"));
+    const myBooks = user.myBooks || [];
+    const index = myBooks.findIndex(b => b.id === bookId);
+    if (index === -1) return;
+
+    myBooks.splice(index, 1);
+    await restoreBookCount(bookId);
+    await updateUserBooks(myBooks);
 
     const grouped = Object.values(
-      books.reduce((acc, book) => {
+      myBooks.reduce((acc, book) => {
         acc[book.id] = acc[book.id]
           ? { ...acc[book.id], qty: acc[book.id].qty + 1 }
           : { ...book, qty: 1 };
         return acc;
       }, {})
     );
-
     setGroupedBooks(grouped);
-  }, []);
-
-  const updateUserBooks = (updatedMyBooks) => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-    const updatedUser = { ...user, myBooks: updatedMyBooks };
-
-    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-    localStorage.setItem(
-      "users",
-      JSON.stringify(users.map(u => u.email === user.email ? updatedUser : u))
-    );
   };
 
-  const restoreBookCount = (bookId) => {
-    const books = JSON.parse(localStorage.getItem("Books")) || [];
-    localStorage.setItem(
-      "Books",
-      JSON.stringify(
-        books.map(b => b.id === bookId ? { ...b, count: b.count + 1 } : b)
-      )
-    );
-  };
-
-  const handleRemoveOne = (bookId) => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
+  const handleRemoveAll = async () => {
+    const user = JSON.parse(sessionStorage.getItem("currentUser"));
     const myBooks = user.myBooks || [];
-    const index = myBooks.findIndex(b => b.id === bookId);
-    if (index === -1) return;
-
-    myBooks.splice(index, 1);
-    restoreBookCount(bookId);
-    updateUserBooks(myBooks);
-
-    setGroupedBooks(
-      Object.values(
-        myBooks.reduce((acc, book) => {
-          acc[book.id] = acc[book.id]
-            ? { ...acc[book.id], qty: acc[book.id].qty + 1 }
-            : { ...book, qty: 1 };
-          return acc;
-        }, {})
-      )
-    );
-  };
-
-  const handleRemoveAll = () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    const myBooks = user.myBooks || [];
-    myBooks.forEach(b => restoreBookCount(b.id));
-    updateUserBooks([]);
+    for (const b of myBooks) {
+      await restoreBookCount(b.id);
+    }
+    await updateUserBooks([]);
     setGroupedBooks([]);
   };
 

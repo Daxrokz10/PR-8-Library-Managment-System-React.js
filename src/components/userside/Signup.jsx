@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
 function Signup() {
@@ -41,33 +42,30 @@ function Signup() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-
-    const userExists = users.find(
-      (user) => user.email === formData.email.trim()
-    );
-
-    if (userExists) {
-      setErrors({ email: "User already exists with this email" });
-      return;
+    try {
+      // Check if user exists
+      const res = await axios.get(
+        `http://localhost:3000/users?email=${encodeURIComponent(formData.email.trim())}`
+      );
+      if (res.data.length > 0) {
+        setErrors({ email: "User already exists with this email" });
+        return;
+      }
+      const newUser = {
+        ...formData,
+        role: "User",
+        isActive: true,
+        myBooks: [],
+      };
+      await axios.post("http://localhost:3000/users", newUser);
+      navigate("/login");
+    } catch (err) {
+      setErrors({ email: "Signup failed. Try again." });
     }
-
-    const newUser = {
-      ...formData,
-      id: Date.now(),
-      role: "User",
-      isActive: true,
-      myBooks: [],
-    };
-
-    users.push(newUser);
-    localStorage.setItem("users", JSON.stringify(users));
-
-    navigate("/login");
   };
 
   return (

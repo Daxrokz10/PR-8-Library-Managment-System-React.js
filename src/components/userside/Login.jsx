@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
@@ -34,35 +35,28 @@ function Login() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-
-    if (!users.length) {
-      alert("No account found. Please sign up first.");
-      navigate("/signup");
-      return;
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/users?email=${encodeURIComponent(formData.email.trim())}&password=${encodeURIComponent(formData.password.trim())}`
+      );
+      const user = res.data[0];
+      if (!user) {
+        setErrors({
+          email: "Invalid email or password",
+          password: "Invalid email or password",
+        });
+        return;
+      }
+      sessionStorage.setItem("isAuth", "true");
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
+      navigate("/");
+    } catch (err) {
+      setErrors({ email: "Login failed. Try again." });
     }
-
-    const user = users.find(
-      (u) =>
-        u.email === formData.email.trim() &&
-        u.password === formData.password.trim()
-    );
-
-    if (!user) {
-      setErrors({
-        email: "Invalid email or password",
-        password: "Invalid email or password",
-      });
-      return;
-    }
-
-    localStorage.setItem("isAuth", "true");
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    navigate("/");
   };
 
   return (

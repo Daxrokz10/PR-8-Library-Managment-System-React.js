@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 function Home() {
   const [books, setBooks] = useState([]);
@@ -7,14 +8,13 @@ function Home() {
   const [visibleLatestCount, setVisibleLatestCount] = useState(4);
 
   useEffect(() => {
-    const storedBooks = JSON.parse(localStorage.getItem("Books")) || [];
-    setBooks(storedBooks);
+    axios.get("http://localhost:3000/books").then((res) => setBooks(res.data));
   }, []);
 
   const latestBooks = books.slice().reverse().slice(0, visibleLatestCount);
 
-  const handleBorrow = (id) => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
+  const handleBorrow = async (id) => {
+    const user = JSON.parse(sessionStorage.getItem("currentUser"));
     if (!user) {
       alert("Please login first");
       return;
@@ -23,24 +23,24 @@ function Home() {
     const bookToBorrow = books.find((b) => b.id === id);
     if (!bookToBorrow || bookToBorrow.count === 0) return;
 
-    const updatedBooks = books.map((book) =>
-      book.id === id ? { ...book, count: book.count - 1 } : book
-    );
+    // Update book count in API
+    await axios.patch(`http://localhost:3000/books/${id}`, {
+      count: bookToBorrow.count - 1,
+    });
 
+    // Update user's myBooks in API
     const updatedUser = {
       ...user,
       myBooks: [...(user.myBooks || []), bookToBorrow],
     };
+    await axios.patch(`http://localhost:3000/users/${user.id}`, {
+      myBooks: updatedUser.myBooks,
+    });
+    sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
 
-    setBooks(updatedBooks);
-    localStorage.setItem("Books", JSON.stringify(updatedBooks));
-    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-    const updatedUsers = users.map((u) =>
-      u.email === user.email ? updatedUser : u
-    );
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    // Refresh books
+    const res = await axios.get("http://localhost:3000/books");
+    setBooks(res.data);
   };
 
   const categories = [

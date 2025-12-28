@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 // Admin
 import Header from "./components/admin/Header";
@@ -35,52 +36,62 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isAuth = localStorage.getItem("isAuth") === "true";
-  const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
+  const [isAuth, setIsAuth] = useState(false);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const isHomePage = location.pathname === "/";
 
   useEffect(() => {
-    const storedBooks = JSON.parse(localStorage.getItem("Books")) || [];
-    setList(storedBooks);
-
-    const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const fixedUsers = storedUsers.map((u) => ({
-      ...u,
-      id: u.id ?? Date.now() + Math.random(),
-    }));
-    localStorage.setItem("users", JSON.stringify(fixedUsers));
-    setUsers(fixedUsers);
+    // Fetch books
+    axios.get("http://localhost:3000/books").then((res) => setList(res.data));
+    // Fetch users
+    axios.get("http://localhost:3000/users").then((res) => setUsers(res.data));
+    // Auth state from session (optional: use cookies or context in real app)
+    setIsAuth(sessionStorage.getItem("isAuth") === "true");
+    setIsAdminLoggedIn(sessionStorage.getItem("isAdminLoggedIn") === "true");
   }, []);
 
   const handleUserLogout = () => {
-    localStorage.removeItem("isAuth");
-    localStorage.removeItem("currentUser");
+    sessionStorage.removeItem("isAuth");
+    sessionStorage.removeItem("currentUser");
+    setIsAuth(false);
     navigate("/login", { replace: true });
   };
 
   const handleAdminLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
+    sessionStorage.removeItem("isAdminLoggedIn");
+    setIsAdminLoggedIn(false);
     navigate("/admin-login", { replace: true });
   };
 
-  const handleAddBookSubmit = (e) => {
+  const handleAddBookSubmit = async (e) => {
     e.preventDefault();
-
-    const updatedBooks = book.id
-      ? list.map((b) => (b.id === book.id ? book : b))
-      : [...list, { ...book, id: Date.now() }];
-
-    setList(updatedBooks);
-    localStorage.setItem("Books", JSON.stringify(updatedBooks));
-    setBook({});
-    setErrors({});
-    navigate("/view-books");
+    try {
+      if (book.id) {
+        // Edit book
+        await axios.put(`http://localhost:3000/books/${book.id}`, book);
+      } else {
+        // Add new book
+        await axios.post("http://localhost:3000/books", book);
+      }
+      // Refresh list
+      const res = await axios.get("http://localhost:3000/books");
+      setList(res.data);
+      setBook({});
+      setErrors({});
+      navigate("/view-books");
+    } catch (err) {
+      setErrors({ submit: "Failed to save book." });
+    }
   };
 
-  const handleDeleteBook = (id) => {
-    const updatedBooks = list.filter((b) => b.id !== id);
-    setList(updatedBooks);
-    localStorage.setItem("Books", JSON.stringify(updatedBooks));
+  const handleDeleteBook = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3000/books/${id}`);
+      const res = await axios.get("http://localhost:3000/books");
+      setList(res.data);
+    } catch (err) {
+      // Optionally handle error
+    }
   };
 
   const handleEditBook = (id) => {

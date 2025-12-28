@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -45,20 +46,23 @@ function AdminLogin() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    if (form.email === "admin@gmail.com" && form.password === "admin123") {
-      localStorage.setItem("isAdminLoggedIn", "true");
-      navigate("/admin");
-    } else {
-      setErrors({
-        email: "Invalid admin credentials",
-        password: "Invalid admin credentials",
-      });
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/users?email=${encodeURIComponent(form.email.trim())}&password=${encodeURIComponent(form.password.trim())}&role=Admin`
+      );
+      const admin = res.data[0];
+      if (admin) {
+        sessionStorage.setItem("isAdminLoggedIn", "true");
+        navigate("/admin");
+      } else {
+        setErrors({
+          email: "Invalid admin credentials",
+          password: "Invalid admin credentials",
+        });
+      }
+    } catch (err) {
+      setErrors({ email: "Login failed. Try again." });
     }
-
     setIsLoading(false);
   };
 

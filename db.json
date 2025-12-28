@@ -1,0 +1,65 @@
+{
+  "books": [
+    {
+      "id": "ae87",
+      "name": "Theodore Bender",
+      "author": "Et quisquam sint exc",
+      "count": 0,
+      "image": "https://www.mylaxoresed.org.au",
+      "category": "Sports"
+    }
+  ],
+  "users": [
+    {
+      "id": "9011",
+      "username": "daksh",
+      "email": "daksh@gmail.com",
+      "password": "1234",
+      "role": "User",
+      "isActive": true,
+      "myBooks": [
+        {
+          "id": "ae87",
+          "name": "Theodore Bender",
+          "author": "Et quisquam sint exc",
+          "count": "4",
+          "image": "https://www.mylaxoresed.org.au",
+          "category": "Sports"
+        },
+        {
+          "id": "ae87",
+          "name": "Theodore Bender",
+          "author": "Et quisquam sint exc",
+          "count": 3,
+          "image": "https://www.mylaxoresed.org.au",
+          "category": "Sports"
+        },
+        {
+          "id": "ae87",
+          "name": "Theodore Bender",
+          "author": "Et quisquam sint exc",
+          "count": 2,
+          "image": "https://www.mylaxoresed.org.au",
+          "category": "Sports"
+        },
+        {
+          "id": "ae87",
+          "name": "Theodore Bender",
+          "author": "Et quisquam sint exc",
+          "count": 1,
+          "image": "https://www.mylaxoresed.org.au",
+          "category": "Sports"
+        }
+      ]
+    },
+    {
+      "id": "admin-1",
+      "username": "admin",
+      "email": "admin@gmail.com",
+      "password": "admin123",
+      "role": "Admin",
+      "isActive": true,
+      "myBooks": []
+    }
+  ]
+}

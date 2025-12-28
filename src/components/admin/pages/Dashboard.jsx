@@ -1,37 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
 
-function Dashboard({ books = [], users = [], setUsers }) {
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+
+function Dashboard() {
+  const [books, setBooks] = useState([]);
+  const [users, setUsers] = useState([]);
+
   useEffect(() => {
-    const syncUsers = () => {
-      const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-      setUsers(storedUsers);
-    };
-
-    const syncBooks = () => {
-      const storedBooks = JSON.parse(localStorage.getItem("books")) || [];
-
-      window.dispatchEvent(
-        new CustomEvent("booksUpdated", { detail: storedBooks })
-      );
-    };
-
-    syncUsers();
-    syncBooks();
-
-    window.addEventListener("profileUpdated", syncUsers);
-    window.addEventListener("booksUpdated", syncBooks);
-
-    window.addEventListener("storage", (e) => {
-      if (e.key === "users") syncUsers();
-      if (e.key === "books") syncBooks();
-    });
-
-    return () => {
-      window.removeEventListener("profileUpdated", syncUsers);
-      window.removeEventListener("booksUpdated", syncBooks);
-      window.removeEventListener("storage", syncUsers);
-    };
-  }, [setUsers]);
+    axios.get("http://localhost:3000/books").then((res) => setBooks(res.data));
+    axios.get("http://localhost:3000/users").then((res) => setUsers(res.data));
+  }, []);
 
   const stats = useMemo(() => {
     const totalBooks = books.length;
@@ -94,17 +72,13 @@ function Dashboard({ books = [], users = [], setUsers }) {
 
   const recentUsers = users.slice(-10).reverse();
 
-  const handleDeleteUser = (id) => {
+  const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-    const updatedUsers = users.filter((u) => u.id !== id);
-    setUsers(updatedUsers);
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (currentUser?.id === id) {
-      localStorage.removeItem("currentUser");
-      localStorage.removeItem("isAuth");
+    try {
+      await axios.delete(`http://localhost:3000/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      alert("Failed to delete user.");
     }
   };
 
